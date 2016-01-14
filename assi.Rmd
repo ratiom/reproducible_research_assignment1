@@ -27,15 +27,71 @@ p
 ```{r}
 daily_mean<-with(dat, tapply(steps, date, mean))
 daily_median<-with(dat, tapply(steps, date, median, na.rm=T))
-```
+
+
 daily_sum<-with(dat, tapply(steps, date, sum, na.rm=T))
 daily_sum <- as.numeric(daily_sum)
 days <- levels(dat$date)
 daily_df <- data.frame(cbind(daily_sum, days))
 daily_df$daily_sum <- as.numeric(as.character(daily_df$daily_sum))
+```
 
-p2 <- ggplot(data = daily_df, aes(x=days, y=daily_sum))
+```{r}
+p2 <- ggplot(data = daily_df, aes(x=days, y=daily_sum)+geom_line)
 p2 <- p2 + geom_line()
 p2 <- p2 + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 p2 <- p2 + geom_point()
 p2
+
+library(VIM)
+rep_NA <- function(x){
+        x <- as.numeric(as.character(x))
+        x[is.na(x)] = median(x, na.rm=T)
+        x
+}
+
+ss=data.frame(apply(dat,2,f))
+
+impute <- function(x, fun) {
+  missing <- is.na(x)
+  replace(x, missing, fun(x[!missing]))
+}
+impute_dat_date <- ddply(dat, ~ date, transform, steps = impute(steps, median))
+imput_dat_interval <- ddply(dat, ~ interval, transform, steps = impute(steps, median))
+
+daily_sum_imputed<-with(imput_dat_interval, tapply(steps, date, sum, na.rm=T))
+daily_sum_imputed <- as.numeric(daily_sum_imputed)
+days <- levels(dat$date)
+daily_df_imputed <- data.frame(cbind(daily_sum_imputed, days))
+daily_df_imputed$daily_sum_imputed <- as.numeric(as.character(daily_df_imputed$daily_sum_imputed))
+
+p3 <- ggplot(data = imput_dat_interval, aes(x=date))
+p3 <- p3 + geom_bar(aes(weights=steps))
+p3 <- p3 + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p3
+```
+Turn the date column into days
+```{r}
+dat_weekday <- imput_dat_interval
+dat_weekday$date <- wday(dat_weekday$date, label=TRUE)
+weekDays <- c('Mon', 'Tues', 'Wed', 'Thurs', 'Fri')
+wkndDays <- c('Sat', 'Sun')
+dat_weekday_done <- dat_weekday[dat_weekday$date %in% weekDays,]
+dat_wknd_done <- dat_weekday[dat_weekday$date %in% wkndDays,]
+
+par(mfrow=c(1,2))
+dat_weekday_done$interval <- as.factor(dat_weekday_done$interval)
+p4 <- ggplot(data = dat_weekday_done, aes(x=interval))
+p4 <- p4 + geom_bar(aes(weight=steps))
+p4
+
+dat_wknd_done$interval <- as.factor(dat_wknd_done$interval)
+p5 <- ggplot(data = dat_wknd_done, aes(x=interval))
+p5 <- p5 + geom_bar(aes(weight=steps))
+p5
+
+library(gridExtra)
+grid.arrange(p4, p5, ncol=2)
+
+```
+
