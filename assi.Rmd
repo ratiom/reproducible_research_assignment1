@@ -23,3 +23,19 @@ You can also embed plots, for example:
 p
 ```
 
+
+```{r}
+daily_mean<-with(dat, tapply(steps, date, mean))
+daily_median<-with(dat, tapply(steps, date, median, na.rm=T))
+```
+daily_sum<-with(dat, tapply(steps, date, sum, na.rm=T))
+daily_sum <- as.numeric(daily_sum)
+days <- levels(dat$date)
+daily_df <- data.frame(cbind(daily_sum, days))
+daily_df$daily_sum <- as.numeric(as.character(daily_df$daily_sum))
+
+p2 <- ggplot(data = daily_df, aes(x=days, y=daily_sum))
+p2 <- p2 + geom_line()
+p2 <- p2 + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p2 <- p2 + geom_point()
+p2
